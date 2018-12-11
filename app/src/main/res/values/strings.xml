@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">sido-mobile</string>
+    <string name="no_camera_permission">Permission pour la caméra non accordée</string>
+    <string name="ok">OK</string>
+    <string name="low_storage_error">Erreur stockage trop faible</string>
+    <string name="permission_camera_rationale">L\'accès à la caméra est nécessaire pour lire le code barre</string>
+</resources>
