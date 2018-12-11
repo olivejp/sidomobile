@@ -25,6 +25,7 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata
 import com.google.firebase.ml.vision.text.FirebaseVisionText
 import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer
+import nc.opt.sidomobile.R
 import nc.opt.sidomobile.barcodreader.BarcodeGraphic
 import nc.opt.sidomobile.barcodreader.camera.GraphicOverlay
 import nc.opt.sidomobile.camera2.utils.CompareSizesByArea

@@ -10,10 +10,7 @@
      https://firebase.google.com/docs/ml-kit/android/read-barcodes -->
     <meta-data
             android:name="com.google.firebase.ml.vision.DEPENDENCIES"
-            android:value="barcode" />
-    <meta-data
-            android:name="com.google.firebase.ml.vision.DEPENDENCIES"
-            android:value="ocr" />
+            android:value="ocr,barcode" />
 
     <application
             android:allowBackup="true"
