@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "821950116518",
+    "firebase_url": "https://sidomobile-c6d38.firebaseio.com",
+    "project_id": "sidomobile-c6d38",
+    "storage_bucket": "sidomobile-c6d38.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:821950116518:android:a22b330f326e9a5f",
+        "android_client_info": {
+          "package_name": "nc.opt.sidomobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "821950116518-j56c4ag5ct8sauag92upt1qmbn2lgun5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "nc.opt.sidomobile",
+            "certificate_hash": "8e4560d0f639234b5f7ac44ff0257ab67054dd76"
+          }
+        },
+        {
+          "client_id": "821950116518-aepougvqkfffarimbka3pgkslqdmqujs.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmo3XbnLvpccLMU1t1zfbpaW9ylrvtI-o"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "821950116518-aepougvqkfffarimbka3pgkslqdmqujs.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

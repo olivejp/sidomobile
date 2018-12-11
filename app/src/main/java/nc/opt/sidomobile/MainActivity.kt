@@ -5,6 +5,7 @@ import android.support.v7.app.AppCompatActivity
 import android.widget.Button
 import com.google.firebase.FirebaseApp
 import nc.opt.sidomobile.camera2.Camera2BasicFragment
+import nc.opt.sidomobile.camera2.OCRFragment
 
 class MainActivity : AppCompatActivity() {
 
@@ -22,7 +23,7 @@ class MainActivity : AppCompatActivity() {
         // startActivity(intent)
 
         buttonOcr.setOnClickListener {
-            supportFragmentManager.beginTransaction().replace(R.id.main_frame, Camera2BasicFragment.newInstance())
+            supportFragmentManager.beginTransaction().replace(R.id.main_frame, OCRFragment.newInstance())
                 .addToBackStack(null)
                 .commit()
         }

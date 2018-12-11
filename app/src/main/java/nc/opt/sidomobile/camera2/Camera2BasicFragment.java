@@ -5,8 +5,19 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.graphics.*;
-import android.hardware.camera2.*;
+import android.graphics.ImageFormat;
+import android.graphics.Matrix;
+import android.graphics.Point;
+import android.graphics.RectF;
+import android.graphics.SurfaceTexture;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
+import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
@@ -21,8 +32,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
-import android.view.*;
+import android.view.LayoutInflater;
+import android.view.Surface;
+import android.view.TextureView;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Toast;
+
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.ml.vision.FirebaseVision;
@@ -30,13 +46,6 @@ import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode;
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetector;
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
-import nc.opt.sidomobile.R;
-import nc.opt.sidomobile.barcodreader.BarcodeGraphic;
-import nc.opt.sidomobile.barcodreader.camera.GraphicOverlay;
-import nc.opt.sidomobile.camera2.utils.CompareSizesByArea;
-import nc.opt.sidomobile.camera2.utils.ConfirmationDialog;
-import nc.opt.sidomobile.camera2.utils.ErrorDialog;
-import nc.opt.sidomobile.camera2.utils.Utils;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -44,6 +53,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+
+import nc.opt.sidomobile.R;
+import nc.opt.sidomobile.barcodreader.BarcodeGraphic;
+import nc.opt.sidomobile.barcodreader.camera.GraphicOverlay;
+import nc.opt.sidomobile.camera2.utils.CompareSizesByArea;
+import nc.opt.sidomobile.camera2.utils.ConfirmationDialog;
+import nc.opt.sidomobile.camera2.utils.ErrorDialog;
+import nc.opt.sidomobile.camera2.utils.Utils;
 
 import static android.content.Context.CAMERA_SERVICE;
 
@@ -276,15 +293,11 @@ public class Camera2BasicFragment extends Fragment
     private boolean detectorIsRunning = false;
 
     private OnSuccessListener<List<FirebaseVisionBarcode>> onSuccessListener = firebaseVisionBarcodes -> {
-        if (firebaseVisionBarcodes.isEmpty()) {
-            mGraphicOverlay.clear();
-        } else {
-            mGraphicOverlay.clear();
-            for (FirebaseVisionBarcode barcode : firebaseVisionBarcodes) {
-                BarcodeGraphic graphic = new BarcodeGraphic(mGraphicOverlay);
-                graphic.setBarcode(barcode);
-                mGraphicOverlay.add(graphic);
-            }
+        mGraphicOverlay.clear();
+        for (FirebaseVisionBarcode barcode : firebaseVisionBarcodes) {
+            BarcodeGraphic graphic = new BarcodeGraphic(mGraphicOverlay);
+            graphic.setBarcode(barcode);
+            mGraphicOverlay.add(graphic);
         }
         detectorIsRunning = false;
     };
