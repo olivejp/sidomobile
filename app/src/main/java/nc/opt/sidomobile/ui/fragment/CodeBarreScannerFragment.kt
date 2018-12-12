@@ -1,4 +1,4 @@
-package nc.opt.sidomobile.camera2
+package nc.opt.sidomobile.ui.fragment
 
 import android.Manifest
 import android.content.Context
@@ -11,24 +11,24 @@ import android.media.ImageReader
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
-import android.support.v4.app.ActivityCompat
-import android.support.v4.app.Fragment
-import android.support.v4.content.ContextCompat
-import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.util.Size
 import android.util.SparseIntArray
 import android.view.*
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import com.google.firebase.ml.vision.FirebaseVision
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetector
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata
-import com.google.firebase.ml.vision.text.FirebaseVisionCloudTextRecognizerOptions
-import com.google.firebase.ml.vision.text.FirebaseVisionText
-import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer
 import nc.opt.sidomobile.R
 import nc.opt.sidomobile.barcodreader.BarcodeGraphic
 import nc.opt.sidomobile.barcodreader.camera.GraphicOverlay
+import nc.opt.sidomobile.camera2.AutoFitTextureView
 import nc.opt.sidomobile.camera2.utils.CompareSizesByArea
 import nc.opt.sidomobile.camera2.utils.ConfirmationDialog
 import nc.opt.sidomobile.camera2.utils.ErrorDialog
@@ -38,7 +38,9 @@ import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 
-class OCRFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallback {
+class CodeBarreScannerFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallback {
+    // private static final int MAX_PREVIEW_HEIGHT = 768;
+
     /**
      * An [ImageReader] that handles still image capture.
      */
@@ -79,7 +81,6 @@ class OCRFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallbac
      * An [AutoFitTextureView] for camera preview.
      */
     private var mTextureView: AutoFitTextureView? = null
-
 
     /**
      * A [CameraCaptureSession] for camera preview.
@@ -123,48 +124,48 @@ class OCRFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallbac
 
                 // Here, we create a CameraCaptureSession for camera preview.
                 mCameraDevice!!.createCaptureSession(
-                        Arrays.asList(surface, mImageReader!!.surface),
-                        object : CameraCaptureSession.StateCallback() {
+                    Arrays.asList(surface, mImageReader!!.surface),
+                    object : CameraCaptureSession.StateCallback() {
 
-                            override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
-                                // The camera is already closed
-                                if (null == mCameraDevice) {
-                                    return
-                                }
-
-                                // When the session is ready, we start displaying the preview.
-                                mCaptureSession = cameraCaptureSession
-
-                                try {
-                                    // Auto focus should be continuous for camera preview.
-                                    mPreviewRequestBuilder!!.set(
-                                            CaptureRequest.CONTROL_AF_MODE,
-                                            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
-                                    )
-
-                                    // Flash is automatically enabled when necessary.
-                                    setAutoFlash(mPreviewRequestBuilder)
-
-                                    // Finally, we start displaying the camera preview.
-                                    mPreviewRequest = mPreviewRequestBuilder!!.build()
-
-                                    mCaptureSession!!.setRepeatingRequest(
-                                            mPreviewRequest!!,
-                                            mCaptureCallback,
-                                            mBackgroundHandler
-                                    )
-                                } catch (e: CameraAccessException) {
-                                    Log.e(TAG, e.localizedMessage, e)
-                                }
-
+                        override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
+                            // The camera is already closed
+                            if (null == mCameraDevice) {
+                                return
                             }
 
-                            override fun onConfigureFailed(
-                                    cameraCaptureSession: CameraCaptureSession
-                            ) {
-                                showToast("Failed")
+                            // When the session is ready, we start displaying the preview.
+                            mCaptureSession = cameraCaptureSession
+
+                            try {
+                                // Auto focus should be continuous for camera preview.
+                                mPreviewRequestBuilder!!.set(
+                                    CaptureRequest.CONTROL_AF_MODE,
+                                    CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
+                                )
+
+                                // Flash is automatically enabled when necessary.
+                                setAutoFlash(mPreviewRequestBuilder)
+
+                                // Finally, we start displaying the camera preview.
+                                mPreviewRequest = mPreviewRequestBuilder!!.build()
+
+                                mCaptureSession!!.setRepeatingRequest(
+                                    mPreviewRequest!!,
+                                    mCaptureCallback,
+                                    mBackgroundHandler
+                                )
+                            } catch (e: CameraAccessException) {
+                                Log.e(TAG, e.localizedMessage, e)
                             }
-                        }, null
+
+                        }
+
+                        override fun onConfigureFailed(
+                            cameraCaptureSession: CameraCaptureSession
+                        ) {
+                            showToast("Failed")
+                        }
+                    }, null
                 )
             } catch (e: CameraAccessException) {
                 Log.e(TAG, e.localizedMessage, e)
@@ -229,12 +230,17 @@ class OCRFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallbac
      */
     private var mFlashSupported: Boolean = false
 
-    private var detector: FirebaseVisionTextRecognizer? = null
+    private var detector: FirebaseVisionBarcodeDetector? = null
 
     private var detectorIsRunning = false
 
-    private val onSuccessListener = { firebaseVisionText: FirebaseVisionText ->
-        Log.d(TAG, firebaseVisionText.text)
+    private val onSuccessListener = { firebaseVisionBarcodes: List<FirebaseVisionBarcode> ->
+        mGraphicOverlay!!.clear()
+        for (barcode in firebaseVisionBarcodes) {
+            val graphic = BarcodeGraphic(mGraphicOverlay)
+            graphic.barcode = barcode
+            mGraphicOverlay!!.add(graphic)
+        }
         detectorIsRunning = false
     }
 
@@ -252,9 +258,9 @@ class OCRFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallbac
         if (!detectorIsRunning) {
             val fbImage = FirebaseVisionImage.fromMediaImage(image, firebaseRotation)
             detectorIsRunning = true
-            detector!!.processImage(fbImage)
-                    .addOnSuccessListener(onSuccessListener)
-                    .addOnFailureListener(onFailureListener)
+            detector!!.detectInImage(fbImage)
+                .addOnSuccessListener(onSuccessListener)
+                .addOnFailureListener(onFailureListener)
         }
         if (image != null) {
             image.close()
@@ -267,17 +273,17 @@ class OCRFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallbac
     private val mCaptureCallback = object : CameraCaptureSession.CaptureCallback() {
 
         override fun onCaptureProgressed(
-                session: CameraCaptureSession,
-                request: CaptureRequest,
-                partialResult: CaptureResult
+            session: CameraCaptureSession,
+            request: CaptureRequest,
+            partialResult: CaptureResult
         ) {
             // Do nothing
         }
 
         override fun onCaptureCompleted(
-                session: CameraCaptureSession,
-                request: CaptureRequest,
-                result: TotalCaptureResult
+            session: CameraCaptureSession,
+            request: CaptureRequest,
+            result: TotalCaptureResult
         ) {
             // Do nothing
         }
@@ -294,18 +300,21 @@ class OCRFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallbac
         activity?.runOnUiThread { Toast.makeText(activity, text, Toast.LENGTH_SHORT).show() }
     }
 
-    override fun onAttach(context: Context?) {
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
         try {
-            appCompatActivity = context as AppCompatActivity?
-            val options:FirebaseVisionCloudTextRecognizerOptions = FirebaseVisionCloudTextRecognizerOptions.Builder().setLanguageHints(Arrays.asList("fr", "en")).build()
-            detector = FirebaseVision.getInstance().getCloudTextRecognizer(options)
+            appCompatActivity = context as AppCompatActivity
+            detector = FirebaseVision.getInstance().visionBarcodeDetector
         } catch (e: ClassCastException) {
             Log.e(TAG, "Context should extends AppCompatActivity", e)
         }
-        super.onAttach(context)
+
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         return inflater.inflate(R.layout.fragment_camera2_basic, container, false)
     }
 
@@ -357,7 +366,7 @@ class OCRFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallbac
         if (requestCode == REQUEST_CAMERA_PERMISSION) {
             if (grantResults.size != 1 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                 ErrorDialog.newInstance("Permission nécessaire")
-                        .show(childFragmentManager, FRAGMENT_DIALOG)
+                    .show(childFragmentManager, FRAGMENT_DIALOG)
             }
         } else {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -384,16 +393,14 @@ class OCRFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallbac
                     continue
                 }
 
-                val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
-                        ?: continue
+                val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP) ?: continue
 
                 // For still image captures, we use the largest available size.
                 val largest =
-                        Collections.max(Arrays.asList(*map.getOutputSizes(ImageFormat.JPEG)), CompareSizesByArea())
+                    Collections.max(Arrays.asList(*map.getOutputSizes(ImageFormat.JPEG)), CompareSizesByArea())
                 mImageReader =
                         ImageReader.newInstance(largest.width, largest.height, ImageFormat.YUV_420_888, /*maxImages*/1)
                 mImageReader!!.setOnImageAvailableListener(mOnImageAvailableListener, mDetectorBackgroundHandler)
-                // mImageReader!!.setOnImageAvailableListener(mOnImageAvailableListener, Handler(Looper.getMainLooper()))
 
                 // Find out if we need to swap dimension to get the preview size relative to sensor
                 // coordinate.
@@ -401,7 +408,7 @@ class OCRFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallbac
                 var rotationCompensation = ORIENTATIONS.get(deviceRotation)
 
                 val mSensorOrientation =
-                        manager.getCameraCharacteristics(cameraId).get(CameraCharacteristics.SENSOR_ORIENTATION)!!
+                    manager.getCameraCharacteristics(cameraId).get(CameraCharacteristics.SENSOR_ORIENTATION)!!
                 rotationCompensation = (rotationCompensation + mSensorOrientation + 270) % 360
 
                 //Orientation of the camera sensor
@@ -453,9 +460,9 @@ class OCRFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallbac
                 // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
                 // garbage capture data.
                 mPreviewSize = Utils.chooseOptimalSize(
-                        map.getOutputSizes(SurfaceTexture::class.java),
-                        rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
-                        maxPreviewHeight, largest
+                    map.getOutputSizes(SurfaceTexture::class.java),
+                    rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
+                    maxPreviewHeight, largest
                 )
 
                 // We fit the aspect ratio of TextureView to the size of preview we picked.
@@ -479,19 +486,19 @@ class OCRFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallbac
             // Currently an NPE is thrown when the Camera2API is used but not supported on the
             // device this code runs.
             ErrorDialog.newInstance("Camera error")
-                    .show(childFragmentManager, FRAGMENT_DIALOG)
+                .show(childFragmentManager, FRAGMENT_DIALOG)
         }
 
     }
 
     /**
-     * Opens the camera specified by [Camera2BasicFragment.mCameraId].
+     * Opens the camera specified by [CodeBarreScannerFragment.mCameraId].
      */
     private fun openCamera(width: Int, height: Int) {
         if (ContextCompat.checkSelfPermission(
-                        appCompatActivity!!,
-                        Manifest.permission.CAMERA
-                ) != PackageManager.PERMISSION_GRANTED
+                appCompatActivity!!,
+                Manifest.permission.CAMERA
+            ) != PackageManager.PERMISSION_GRANTED
         ) {
             requestCameraPermission()
             return
@@ -593,8 +600,8 @@ class OCRFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallbac
             bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY())
             matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL)
             val scale = Math.max(
-                    viewHeight.toFloat() / mPreviewSize!!.height,
-                    viewWidth.toFloat() / mPreviewSize!!.width
+                viewHeight.toFloat() / mPreviewSize!!.height,
+                viewWidth.toFloat() / mPreviewSize!!.width
             )
             matrix.postScale(scale, scale, centerX, centerY)
             matrix.postRotate((90 * (rotation - 2)).toFloat(), centerX, centerY)
@@ -608,8 +615,8 @@ class OCRFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallbac
     private fun setAutoFlash(requestBuilder: CaptureRequest.Builder?) {
         if (mFlashSupported) {
             requestBuilder!!.set(
-                    CaptureRequest.CONTROL_AE_MODE,
-                    CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH
+                CaptureRequest.CONTROL_AE_MODE,
+                CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH
             )
         }
     }
@@ -633,7 +640,7 @@ class OCRFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallbac
         /**
          * Tag for the [Log].
          */
-        private val TAG = "OCRFragment"
+        private val TAG = "CodeBarreScannerFrag"
 
         /**
          * Max preview width that is guaranteed by Camera2 API
@@ -647,8 +654,8 @@ class OCRFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallbac
         private val MAX_PREVIEW_HEIGHT = 1080
 
 
-        fun newInstance(): Camera2BasicFragment {
-            return Camera2BasicFragment()
+        fun newInstance(): CodeBarreScannerFragment {
+            return CodeBarreScannerFragment()
         }
     }
 }

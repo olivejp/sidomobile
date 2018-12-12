@@ -16,10 +16,9 @@
 package nc.opt.sidomobile.barcodreader;
 
 import android.content.Context;
-import android.support.annotation.UiThread;
+import androidx.annotation.UiThread;
 import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.Tracker;
-import com.google.android.gms.vision.barcode.Barcode;
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode;
 import nc.opt.sidomobile.barcodreader.camera.GraphicOverlay;
 

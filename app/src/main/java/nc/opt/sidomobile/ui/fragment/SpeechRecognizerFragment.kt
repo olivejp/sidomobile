@@ -1,4 +1,4 @@
-package nc.opt.sidomobile
+package nc.opt.sidomobile.ui.fragment
 
 import android.Manifest
 import android.content.Context
@@ -12,9 +12,9 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.RecognizerIntent.*
 import android.speech.SpeechRecognizer
-import android.support.v4.app.Fragment
-import android.support.v4.content.ContextCompat
-import android.support.v7.app.AppCompatActivity
+import androidx.fragment.app.Fragment
+import androidx.core.content.ContextCompat
+import androidx.appcompat.app.AppCompatActivity
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.MenuItem
@@ -22,10 +22,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import nc.opt.sidomobile.R
 import java.lang.ClassCastException
 import java.util.*
 
-class SpeechRecognizerFragment : Fragment() {
+class SpeechRecognizerFragment : androidx.fragment.app.Fragment() {
 
     lateinit var textWidget: TextView
     lateinit var textError: TextView
@@ -47,7 +48,7 @@ class SpeechRecognizerFragment : Fragment() {
         checkPermission()
     }
 
-    override fun onAttach(context: Context?) {
+    override fun onAttach(context: Context) {
         super.onAttach(context)
         try {
             appCompatActivity = context as AppCompatActivity
