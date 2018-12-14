@@ -162,48 +162,48 @@ class OCRFragment : androidx.fragment.app.Fragment(), ActivityCompat.OnRequestPe
 
                 // Here, we create a CameraCaptureSession for camera preview.
                 mCameraDevice!!.createCaptureSession(
-                        Arrays.asList(surface, mImageReader!!.surface),
-                        object : CameraCaptureSession.StateCallback() {
+                    Arrays.asList(surface, mImageReader!!.surface),
+                    object : CameraCaptureSession.StateCallback() {
 
-                            override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
-                                // The camera is already closed
-                                if (null == mCameraDevice) {
-                                    return
-                                }
-
-                                // When the session is ready, we start displaying the preview.
-                                mCaptureSession = cameraCaptureSession
-
-                                try {
-                                    // Auto focus should be continuous for camera preview.
-                                    mPreviewRequestBuilder!!.set(
-                                            CaptureRequest.CONTROL_AF_MODE,
-                                            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
-                                    )
-
-                                    // Flash is automatically enabled when necessary.
-                                    setAutoFlash(mPreviewRequestBuilder)
-
-                                    // Finally, we start displaying the camera preview.
-                                    mPreviewRequest = mPreviewRequestBuilder!!.build()
-
-                                    mCaptureSession!!.setRepeatingRequest(
-                                            mPreviewRequest!!,
-                                            mCaptureCallback,
-                                            mBackgroundHandler
-                                    )
-                                } catch (e: CameraAccessException) {
-                                    Log.e(TAG, e.localizedMessage, e)
-                                }
-
+                        override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
+                            // The camera is already closed
+                            if (null == mCameraDevice) {
+                                return
                             }
 
-                            override fun onConfigureFailed(
-                                    cameraCaptureSession: CameraCaptureSession
-                            ) {
-                                showToast("Failed")
+                            // When the session is ready, we start displaying the preview.
+                            mCaptureSession = cameraCaptureSession
+
+                            try {
+                                // Auto focus should be continuous for camera preview.
+                                mPreviewRequestBuilder!!.set(
+                                    CaptureRequest.CONTROL_AF_MODE,
+                                    CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
+                                )
+
+                                // Flash is automatically enabled when necessary.
+                                setAutoFlash(mPreviewRequestBuilder)
+
+                                // Finally, we start displaying the camera preview.
+                                mPreviewRequest = mPreviewRequestBuilder!!.build()
+
+                                mCaptureSession!!.setRepeatingRequest(
+                                    mPreviewRequest!!,
+                                    mCaptureCallback,
+                                    mBackgroundHandler
+                                )
+                            } catch (e: CameraAccessException) {
+                                Log.e(TAG, e.localizedMessage, e)
                             }
-                        }, null
+
+                        }
+
+                        override fun onConfigureFailed(
+                            cameraCaptureSession: CameraCaptureSession
+                        ) {
+                            showToast("Failed")
+                        }
+                    }, null
                 )
             } catch (e: CameraAccessException) {
                 Log.e(TAG, e.localizedMessage, e)
@@ -255,12 +255,13 @@ class OCRFragment : androidx.fragment.app.Fragment(), ActivityCompat.OnRequestPe
     private val mOnImageAvailableListener = { reader: ImageReader ->
         val image = reader.acquireLatestImage()
         if (!detectorIsRunning) {
-            Log.d(TAG, "Taille de l'image = " + image!!.width + " x " + image!!.height)
+            Log.d(TAG, "Taille de l'image = " + image?.width + " x " + image?.height)
+            Log.d(TAG, "Taille du graphicOverlay = " + mGraphicOverlay?.width + " x " + mGraphicOverlay?.height)
             val fbImage = FirebaseVisionImage.fromMediaImage(image, firebaseRotation)
             detectorIsRunning = true
             detector!!.processImage(fbImage)
-                    .addOnSuccessListener(onSuccessListener)
-                    .addOnFailureListener(onFailureListener)
+                .addOnSuccessListener(onSuccessListener)
+                .addOnFailureListener(onFailureListener)
         }
         if (image != null) {
             image.close()
@@ -271,11 +272,19 @@ class OCRFragment : androidx.fragment.app.Fragment(), ActivityCompat.OnRequestPe
      * A [CameraCaptureSession.CaptureCallback] that handles events related to JPEG capture.
      */
     private val mCaptureCallback = object : CameraCaptureSession.CaptureCallback() {
-        override fun onCaptureProgressed(session: CameraCaptureSession, request: CaptureRequest, partialResult: CaptureResult) {
+        override fun onCaptureProgressed(
+            session: CameraCaptureSession,
+            request: CaptureRequest,
+            partialResult: CaptureResult
+        ) {
             // Do nothing
         }
 
-        override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
+        override fun onCaptureCompleted(
+            session: CameraCaptureSession,
+            request: CaptureRequest,
+            result: TotalCaptureResult
+        ) {
             // Do nothing
         }
     }
@@ -352,7 +361,7 @@ class OCRFragment : androidx.fragment.app.Fragment(), ActivityCompat.OnRequestPe
         if (requestCode == REQUEST_CAMERA_PERMISSION) {
             if (grantResults.size != 1 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                 ErrorDialog.newInstance("Permission nécessaire")
-                        .show(childFragmentManager, FRAGMENT_DIALOG)
+                    .show(childFragmentManager, FRAGMENT_DIALOG)
             }
         } else {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -380,12 +389,11 @@ class OCRFragment : androidx.fragment.app.Fragment(), ActivityCompat.OnRequestPe
                 }
 
                 val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
-                        ?: continue
+                    ?: continue
 
                 // For still image captures, we use the largest available size.
-                val largest = Collections.max(Arrays.asList(*map.getOutputSizes(ImageFormat.JPEG)), CompareSizesByArea())
-
-                // mImageReader!!.setOnImageAvailableListener(mOnImageAvailableListener, Handler(Looper.getMainLooper()))
+                val largest =
+                    Collections.max(Arrays.asList(*map.getOutputSizes(ImageFormat.JPEG)), CompareSizesByArea())
 
                 // Find out if we need to swap dimension to get the preview size relative to sensor
                 // coordinate.
@@ -393,7 +401,7 @@ class OCRFragment : androidx.fragment.app.Fragment(), ActivityCompat.OnRequestPe
                 var rotationCompensation = ORIENTATIONS.get(deviceRotation)
 
                 val mSensorOrientation =
-                        manager.getCameraCharacteristics(cameraId).get(CameraCharacteristics.SENSOR_ORIENTATION)!!
+                    manager.getCameraCharacteristics(cameraId).get(CameraCharacteristics.SENSOR_ORIENTATION)!!
                 rotationCompensation = (rotationCompensation + mSensorOrientation + 270) % 360
 
                 //Orientation of the camera sensor
@@ -445,9 +453,9 @@ class OCRFragment : androidx.fragment.app.Fragment(), ActivityCompat.OnRequestPe
                 // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
                 // garbage capture data.
                 mPreviewSize = Utils.chooseOptimalSize(
-                        map.getOutputSizes(SurfaceTexture::class.java),
-                        rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
-                        maxPreviewHeight, largest
+                    map.getOutputSizes(SurfaceTexture::class.java),
+                    rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
+                    maxPreviewHeight, largest
                 )
 
                 // We fit the aspect ratio of TextureView to the size of preview we picked.
@@ -457,10 +465,16 @@ class OCRFragment : androidx.fragment.app.Fragment(), ActivityCompat.OnRequestPe
                 } else {
                     mTextureView!!.setAspectRatio(mPreviewSize!!.height, mPreviewSize!!.width)
                 }
-
-                Log.d(TAG, "Taille de la preview = " + mPreviewSize!!.width + " x " + mPreviewSize!!.height)
-
-                mImageReader = ImageReader.newInstance(mPreviewSize!!.width, mPreviewSize!!.height, ImageFormat.YUV_420_888, /*maxImages*/1)
+                Log.d(
+                    TAG,
+                    "Taille du graphicOverlay en début de programme " + mGraphicOverlay!!.width + " x " + mGraphicOverlay!!.height
+                )
+                mImageReader = ImageReader.newInstance(
+                    mGraphicOverlay!!.width,
+                    mGraphicOverlay!!.height,
+                    ImageFormat.YUV_420_888,
+                    1
+                )
                 mImageReader!!.setOnImageAvailableListener(mOnImageAvailableListener, mDetectorBackgroundHandler)
 
                 // Check if the flash is supported.
@@ -476,7 +490,7 @@ class OCRFragment : androidx.fragment.app.Fragment(), ActivityCompat.OnRequestPe
             // Currently an NPE is thrown when the Camera2API is used but not supported on the
             // device this code runs.
             ErrorDialog.newInstance("Camera error")
-                    .show(childFragmentManager, FRAGMENT_DIALOG)
+                .show(childFragmentManager, FRAGMENT_DIALOG)
         }
 
     }
@@ -486,9 +500,9 @@ class OCRFragment : androidx.fragment.app.Fragment(), ActivityCompat.OnRequestPe
      */
     private fun openCamera(width: Int, height: Int) {
         if (ContextCompat.checkSelfPermission(
-                        appCompatActivity!!,
-                        Manifest.permission.CAMERA
-                ) != PackageManager.PERMISSION_GRANTED
+                appCompatActivity,
+                Manifest.permission.CAMERA
+            ) != PackageManager.PERMISSION_GRANTED
         ) {
             requestCameraPermission()
             return
@@ -496,7 +510,7 @@ class OCRFragment : androidx.fragment.app.Fragment(), ActivityCompat.OnRequestPe
         setUpCameraOutputs(width, height)
         configureTransform(width, height)
         val activity = appCompatActivity
-        val manager = activity!!.getSystemService(CAMERA_SERVICE) as CameraManager
+        val manager = activity.getSystemService(CAMERA_SERVICE) as CameraManager
         try {
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw RuntimeException("Time out waiting to lock camera opening.")
@@ -589,8 +603,8 @@ class OCRFragment : androidx.fragment.app.Fragment(), ActivityCompat.OnRequestPe
             bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY())
             matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL)
             val scale = Math.max(
-                    viewHeight.toFloat() / mPreviewSize!!.height,
-                    viewWidth.toFloat() / mPreviewSize!!.width
+                viewHeight.toFloat() / mPreviewSize!!.height,
+                viewWidth.toFloat() / mPreviewSize!!.width
             )
             matrix.postScale(scale, scale, centerX, centerY)
             matrix.postRotate((90 * (rotation - 2)).toFloat(), centerX, centerY)
@@ -604,8 +618,8 @@ class OCRFragment : androidx.fragment.app.Fragment(), ActivityCompat.OnRequestPe
     private fun setAutoFlash(requestBuilder: CaptureRequest.Builder?) {
         if (mFlashSupported) {
             requestBuilder!!.set(
-                    CaptureRequest.CONTROL_AE_MODE,
-                    CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH
+                CaptureRequest.CONTROL_AE_MODE,
+                CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH
             )
         }
     }
