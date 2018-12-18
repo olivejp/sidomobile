@@ -9,7 +9,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 
-import static nc.opt.sidomobile.camera2.Camera2BasicFragment.REQUEST_CAMERA_PERMISSION;
+import static nc.opt.sidomobile.ui.fragment.Camera2BasicFragment.REQUEST_CAMERA_PERMISSION;
 
 
 /**
